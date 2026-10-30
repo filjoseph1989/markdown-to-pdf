@@ -1,0 +1,19 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: md_to_pdf",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "md_to_pdf",
+            // -m md_to_pdf needs the package's parent folder on the path
+            "env": { "PYTHONPATH": "${workspaceFolder}/.." },
+            "cwd": "/Users/fil/Fil/value-chain-project",
+            "args": ["agy-claude-response/claude-response-90.md"],
+            "justMyCode": true
+        }
+    ]
+}
