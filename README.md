@@ -57,6 +57,31 @@ python3 md_to_pdf docs/
 
 `python3 -m md_to_pdf ...` works too.
 
+### From any directory
+
+Put the folder *above* `md_to_pdf` on `PYTHONPATH`, then run it as a module:
+
+```bash
+PYTHONPATH=/path/to/parent python3 -m md_to_pdf notes.md
+```
+
+Use a Python that has markdown-it-py installed (e.g. `python3.13` if that's where you installed it).
+Otherwise it falls back to a more limited converter (see Requirements).
+
+For a short command, add an alias to `~/.zshrc` (or `~/.bashrc`):
+
+```bash
+alias md2pdf='PYTHONPATH=/path/to/parent python3 -m md_to_pdf'
+```
+
+Run `source ~/.zshrc` in terminals that are already open. New terminals pick it up automatically. Then:
+
+```bash
+md2pdf notes.md
+md2pdf report.md --landscape --open
+md2pdf docs/
+```
+
 ### Options
 
 | Option | Description | Default |
@@ -69,6 +94,7 @@ python3 md_to_pdf docs/
 | `--browser` | Path to a Chrome/Chromium/Brave/Edge executable | Auto-detected |
 | `--keep-html` | Keep the intermediate HTML file for debugging | Off |
 | `--open` | Open the PDF after conversion (macOS only) | Off |
+| `--delete-md` | Delete the source `.md` file after a successful conversion | Off |
 
 ### From Python
 
@@ -87,7 +113,7 @@ Markdown → HTML → PDF:
 |---|---|
 | `cli.py` | Command-line arguments; single file vs. directory |
 | `converter.py` | The pipeline |
-| `preprocess.py` | Frontmatter, GitHub alerts, task lists, relative images |
+| `preprocess.py` | Frontmatter, GitHub alerts, task lists |
 | `latex.py` | Protects `$...$` math from Markdown and hands it to KaTeX |
 | `md_html.py` | Markdown → HTML (markdown-it-py, Python-Markdown, or bare fallback) |
 | `template.py` | Builds the full HTML page |

@@ -38,7 +38,7 @@ def render_markdown_file(
     # Read and pre-process Markdown
     md_content = input_file.read_text(encoding="utf-8")
     protected_md, formulas = protect_math(md_content)
-    processed_md = preprocess_markdown(protected_md, base_dir=input_file.parent)
+    processed_md = preprocess_markdown(protected_md)
 
     # Convert to HTML
     body_html = restore_math(convert_markdown_to_html(processed_md), formulas)
@@ -56,7 +56,7 @@ def render_markdown_file(
         with_math=bool(formulas),
     )
 
-    # Write temporary HTML file
+    # Write temporary HTML file next to the source so relative image paths resolve
     temp_html = input_file.parent / f"._{input_file.stem}_temp.html"
     temp_html.write_text(full_html, encoding="utf-8")
 
