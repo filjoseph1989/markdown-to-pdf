@@ -87,7 +87,7 @@ Markdown → HTML → PDF:
 |---|---|
 | `cli.py` | Command-line arguments; single file vs. directory |
 | `converter.py` | The pipeline |
-| `preprocess.py` | Frontmatter, GitHub alerts, task lists, relative images |
+| `preprocess.py` | Frontmatter, GitHub alerts, task lists |
 | `latex.py` | Protects `$...$` math from Markdown and hands it to KaTeX |
 | `md_html.py` | Markdown → HTML (markdown-it-py, Python-Markdown, or bare fallback) |
 | `template.py` | Builds the full HTML page |

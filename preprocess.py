@@ -1,7 +1,6 @@
-"""Pre-processing: GitHub Alerts, Frontmatter, Task Lists, Relative Images."""
+"""Pre-processing: GitHub Alerts, Frontmatter, Task Lists."""
 
 import re
-from pathlib import Path
 
 ALERT_STYLES = {
     "NOTE": {
@@ -42,8 +41,12 @@ ALERT_STYLES = {
 }
 
 
-def preprocess_markdown(text: str, base_dir: Path) -> str:
-    """Preprocess Markdown for frontmatter, GitHub alerts, task lists, and images."""
+def preprocess_markdown(text: str) -> str:
+    """Preprocess Markdown for frontmatter, GitHub alerts and task lists.
+
+    Image paths are left as written: the intermediate HTML is saved next to the
+    Markdown file, so relative paths resolve the same way they do in an editor.
+    """
     lines = text.split("\n")
     processed_lines = []
     in_frontmatter = False
@@ -106,7 +109,6 @@ def preprocess_markdown(text: str, base_dir: Path) -> str:
             continue
 
         line = render_task_checkbox(line)
-        line = resolve_image_paths(line, base_dir)
 
         processed_lines.append(line)
         i += 1
@@ -130,20 +132,3 @@ def render_task_checkbox(line: str) -> str:
 
     return line
 
-
-def resolve_image_paths(line: str, base_dir: Path) -> str:
-    """Resolve relative image paths to absolute file URIs."""
-    def replace_img_src(match):
-        alt_text = match.group(1)
-        img_path = match.group(2).strip()
-
-        # If remote URL or absolute file, leave as is
-        if img_path.startswith(("http://", "https://", "file://", "data:")):
-            return match.group(0)
-
-        abs_img_path = (base_dir / img_path).resolve()
-        if abs_img_path.exists():
-            return f"![{alt_text}](file://{abs_img_path})"
-        return match.group(0)
-
-    return re.sub(r"!\[(.*?)\]\((.*?)\)", replace_img_src, line)

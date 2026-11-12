@@ -17,7 +17,7 @@ when it's missing, and a bare fallback (headings and paragraphs only) when neith
 Modules:
 - cli.py         command-line arguments, single file vs. directory
 - converter.py   the pipeline: Markdown -> HTML -> PDF
-- preprocess.py  frontmatter, GitHub alerts, task lists, relative images
+- preprocess.py  frontmatter, GitHub alerts, task lists
 - latex.py       protects $...$ math from Markdown and hands it to KaTeX
 - md_html.py     Markdown -> HTML (markdown-it-py, Python-Markdown, or bare fallback)
 - template.py    builds the full HTML page from styles.css
