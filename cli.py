@@ -1,10 +1,14 @@
 """Command-line interface: parse arguments and convert a file or a whole directory."""
 
 import argparse
+import os
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from .converter import render_markdown_file
+from .merge import append_pdf, require_pypdf
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,28 +64,74 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Delete the source Markdown file after it is successfully converted",
     )
+    parser.add_argument(
+        "--append",
+        type=Path,
+        default=None,
+        metavar="PDF",
+        help="Add the converted Markdown as new pages at the end of an existing PDF "
+             "(written back to that PDF, or to -o if given). Requires pypdf.",
+    )
     return parser
 
 
 def convert_file(args: argparse.Namespace, input_path: Path) -> None:
     try:
-        out = render_markdown_file(
-            input_file=input_path,
-            output_pdf=args.output,
-            page_size=args.page_size,
-            margin=args.margin,
-            landscape=args.landscape,
-            custom_browser=args.browser,
-            keep_html=args.keep_html,
-            open_after=args.open,
-        )
-        print(f"✓ Successfully generated PDF: {out}")
+        if args.append:
+            out = append_file(args, input_path)
+        else:
+            out = render_markdown_file(
+                input_file=input_path,
+                output_pdf=args.output,
+                page_size=args.page_size,
+                margin=args.margin,
+                landscape=args.landscape,
+                custom_browser=args.browser,
+                keep_html=args.keep_html,
+                open_after=args.open,
+            )
+            print(f"✓ Successfully generated PDF: {out}")
         if args.delete_md:
             input_path.unlink()
             print(f"✓ Deleted source Markdown: {input_path}")
     except Exception as e:
         print(f"✗ Error: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def append_file(args: argparse.Namespace, input_path: Path) -> Path:
+    """Render input_path and add its pages to the end of args.append."""
+    target = args.append.resolve()
+    output = (args.output or args.append).resolve()
+    render_options = dict(
+        page_size=args.page_size,
+        margin=args.margin,
+        landscape=args.landscape,
+        custom_browser=args.browser,
+        keep_html=args.keep_html,
+    )
+
+    if not target.exists():
+        # Nothing to append to yet: start the PDF with this document.
+        render_markdown_file(input_file=input_path, output_pdf=output, **render_options)
+        print(f"✓ {target.name} did not exist; created {output}")
+    else:
+        if not target.is_file():
+            raise ValueError(f"--append target is not a file: {target}")
+        require_pypdf()
+        fd, tmp_name = tempfile.mkstemp(suffix=".pdf", dir=output.parent)
+        os.close(fd)
+        new_pages = Path(tmp_name)
+        try:
+            render_markdown_file(input_file=input_path, output_pdf=new_pages, **render_options)
+            total = append_pdf(target, new_pages, output)
+        finally:
+            new_pages.unlink(missing_ok=True)
+        print(f"✓ Appended {input_path.name} to {target.name}: {output} ({total} pages)")
+
+    if args.open and sys.platform == "darwin":
+        subprocess.run(["open", str(output)])
+    return output
 
 
 def convert_directory(args: argparse.Namespace, input_path: Path) -> None:
@@ -124,6 +174,9 @@ def main() -> None:
 
     if input_path.is_file():
         convert_file(args, input_path)
+    elif input_path.is_dir() and args.append:
+        print("Error: --append works with a single Markdown file, not a directory.", file=sys.stderr)
+        sys.exit(1)
     elif input_path.is_dir():
         convert_directory(args, input_path)
     else:

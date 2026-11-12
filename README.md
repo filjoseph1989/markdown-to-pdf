@@ -95,6 +95,27 @@ md2pdf docs/
 | `--keep-html` | Keep the intermediate HTML file for debugging | Off |
 | `--open` | Open the PDF after conversion (macOS only) | Off |
 | `--delete-md` | Delete the source `.md` file after a successful conversion | Off |
+| `--append PDF` | Add the converted file as new pages at the end of `PDF` (needs pypdf) | Off |
+
+### Appending to an existing PDF
+
+`--append` renders a single Markdown file and adds its pages after the last page of an existing PDF.
+The new content always starts on a fresh page. It needs [pypdf](https://pypi.org/project/pypdf/):
+
+```bash
+python3 -m pip install pypdf
+```
+
+```bash
+# Add chapter2.md to the end of book.pdf (book.pdf is updated in place)
+python3 md_to_pdf chapter2.md --append book.pdf
+
+# Keep book.pdf unchanged and write the combined PDF elsewhere
+python3 md_to_pdf chapter2.md --append book.pdf -o book-v2.pdf
+```
+
+If the target PDF doesn't exist yet, it is created from the Markdown file, so you can build a
+document up one file at a time. `--append` doesn't accept a directory.
 
 ### From Python
 
@@ -119,3 +140,4 @@ Markdown → HTML → PDF:
 | `template.py` | Builds the full HTML page |
 | `styles.css` | All PDF styling — edit this to change the look |
 | `renderers.py` | Finds a browser and prints the HTML to PDF |
+| `merge.py` | Appends one PDF's pages to another (`--append`) |
