@@ -55,6 +55,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Open the generated PDF automatically after conversion (macOS)",
     )
+    parser.add_argument(
+        "--delete-md",
+        action="store_true",
+        help="Delete the source Markdown file after it is successfully converted",
+    )
     return parser
 
 
@@ -71,6 +76,9 @@ def convert_file(args: argparse.Namespace, input_path: Path) -> None:
             open_after=args.open,
         )
         print(f"✓ Successfully generated PDF: {out}")
+        if args.delete_md:
+            input_path.unlink()
+            print(f"✓ Deleted source Markdown: {input_path}")
     except Exception as e:
         print(f"✗ Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -101,6 +109,9 @@ def convert_directory(args: argparse.Namespace, input_path: Path) -> None:
             )
             print(f"  ✓ {f.name} -> {dest_pdf.name}")
             success_count += 1
+            if args.delete_md:
+                f.unlink()
+                print(f"    deleted {f.name}")
         except Exception as err:
             print(f"  ✗ Failed to convert {f.name}: {err}", file=sys.stderr)
 

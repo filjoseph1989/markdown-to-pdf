@@ -69,6 +69,7 @@ python3 md_to_pdf docs/
 | `--browser` | Path to a Chrome/Chromium/Brave/Edge executable | Auto-detected |
 | `--keep-html` | Keep the intermediate HTML file for debugging | Off |
 | `--open` | Open the PDF after conversion (macOS only) | Off |
+| `--delete-md` | Delete the source `.md` file after a successful conversion | Off |
 
 ### From Python
 
