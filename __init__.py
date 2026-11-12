@@ -23,6 +23,7 @@ Modules:
 - template.py    builds the full HTML page from styles.css
 - styles.css     all PDF styling
 - renderers.py   finds a browser and prints the HTML to PDF
+- merge.py       appends one PDF's pages to another (--append)
 """
 
 from .converter import render_markdown_file
