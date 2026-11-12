@@ -57,6 +57,31 @@ python3 md_to_pdf docs/
 
 `python3 -m md_to_pdf ...` works too.
 
+### From any directory
+
+Put the folder *above* `md_to_pdf` on `PYTHONPATH`, then run it as a module:
+
+```bash
+PYTHONPATH=/path/to/parent python3 -m md_to_pdf notes.md
+```
+
+Use a Python that has markdown-it-py installed (e.g. `python3.13` if that's where you installed it).
+Otherwise it falls back to a more limited converter (see Requirements).
+
+For a short command, add an alias to `~/.zshrc` (or `~/.bashrc`):
+
+```bash
+alias md2pdf='PYTHONPATH=/path/to/parent python3 -m md_to_pdf'
+```
+
+Run `source ~/.zshrc` in terminals that are already open. New terminals pick it up automatically. Then:
+
+```bash
+md2pdf notes.md
+md2pdf report.md --landscape --open
+md2pdf docs/
+```
+
 ### Options
 
 | Option | Description | Default |
