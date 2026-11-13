@@ -1,4 +1,4 @@
-"""Command-line interface: parse arguments and convert a file or a whole directory."""
+"""Command-line interface: convert a file or a whole directory, or append/combine into one PDF."""
 
 import argparse
 import os
@@ -6,9 +6,10 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import List
 
 from .converter import render_markdown_file
-from .merge import append_pdf, require_pypdf
+from .merge import append_pdf, merge_pdfs, require_pypdf
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -19,7 +20,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "input",
         type=Path,
-        help="Path to the markdown file (or directory of markdown files)",
+        nargs="+",
+        help="Path to the markdown file (or directory of markdown files). "
+             "With --combine: any number of Markdown files, PDFs and directories",
     )
     parser.add_argument(
         "-o", "--output",
@@ -71,6 +74,13 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PDF",
         help="Add the converted Markdown as new pages at the end of an existing PDF "
              "(written back to that PDF, or to -o if given). Requires pypdf.",
+    )
+    parser.add_argument(
+        "--combine",
+        action="store_true",
+        help="Join all inputs, in the order given, into the single PDF named by -o. "
+             "Markdown files are converted first, PDFs are used as they are, and a "
+             "directory adds its .md files in name order. Requires pypdf.",
     )
     return parser
 
@@ -168,8 +178,86 @@ def convert_directory(args: argparse.Namespace, input_path: Path) -> None:
     print(f"\nCompleted: {success_count}/{len(md_files)} files converted.")
 
 
+def collect_combine_sources(inputs: List[Path]) -> List[Path]:
+    """Expand the inputs into an ordered list of Markdown and PDF files."""
+    sources: List[Path] = []
+    for raw in inputs:
+        path = raw.resolve()
+        if path.is_dir():
+            md_files = sorted(path.glob("*.md"))
+            if not md_files:
+                print(f"  (no .md files in {raw}, skipped)")
+            sources.extend(md_files)
+        elif path.is_file():
+            sources.append(path)
+        else:
+            raise FileNotFoundError(f"Input not found: {raw}")
+    if not sources:
+        raise ValueError("Nothing to combine: no Markdown or PDF files found in the inputs.")
+    return sources
+
+
+def combine_inputs(args: argparse.Namespace) -> None:
+    """Convert the Markdown inputs and join everything into one PDF."""
+    try:
+        if args.output is None:
+            raise ValueError("--combine needs -o/--output for the combined PDF.")
+        if args.append:
+            raise ValueError("--combine can't be used with --append; list the PDF as an input instead.")
+        output = args.output.resolve()
+        if output.is_dir():
+            raise ValueError(f"-o must be a PDF file path, not a directory: {args.output}")
+        require_pypdf()
+
+        sources = collect_combine_sources(args.input)
+        markdown = [s for s in sources if s.suffix.lower() != ".pdf"]
+        print(f"Combining {len(sources)} files into {output.name}...")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pdfs: List[Path] = []
+            for i, source in enumerate(sources):
+                if source.suffix.lower() == ".pdf":
+                    pdfs.append(source)
+                    print(f"  + {source.name}")
+                    continue
+                rendered = Path(tmp) / f"{i:04d}_{source.stem}.pdf"
+                render_markdown_file(
+                    input_file=source,
+                    output_pdf=rendered,
+                    page_size=args.page_size,
+                    margin=args.margin,
+                    landscape=args.landscape,
+                    custom_browser=args.browser,
+                    keep_html=args.keep_html,
+                )
+                pdfs.append(rendered)
+                print(f"  ✓ {source.name}")
+            total = merge_pdfs(pdfs, output)
+
+        print(f"✓ Combined {len(sources)} files into {output} ({total} pages)")
+        if args.delete_md:
+            for md in markdown:
+                md.unlink()
+                print(f"  deleted {md.name}")
+    except Exception as e:
+        print(f"✗ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.open and sys.platform == "darwin":
+        subprocess.run(["open", str(output)])
+
+
 def main() -> None:
     args = build_parser().parse_args()
+
+    if args.combine:
+        combine_inputs(args)
+        return
+    if len(args.input) > 1:
+        print("Error: several inputs need --combine (and -o for the combined PDF).", file=sys.stderr)
+        sys.exit(1)
+
+    args.input = args.input[0]
     input_path = args.input.resolve()
 
     if input_path.is_file():

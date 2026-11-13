@@ -96,6 +96,7 @@ md2pdf docs/
 | `--open` | Open the PDF after conversion (macOS only) | Off |
 | `--delete-md` | Delete the source `.md` file after a successful conversion | Off |
 | `--append PDF` | Add the converted file as new pages at the end of `PDF` (needs pypdf) | Off |
+| `--combine` | Join all inputs (Markdown, PDFs, directories) into the one PDF named by `-o` (needs pypdf) | Off |
 
 ### Appending to an existing PDF
 
@@ -116,6 +117,28 @@ python3 md_to_pdf chapter2.md --append book.pdf -o book-v2.pdf
 
 If the target PDF doesn't exist yet, it is created from the Markdown file, so you can build a
 document up one file at a time. `--append` doesn't accept a directory.
+
+### Combining files into one PDF
+
+`--combine` takes any number of inputs and joins them, in the order given, into the single PDF
+named by `-o`. Each input can be:
+
+- a Markdown file: converted, then added
+- a PDF: added as it is
+- a directory: its `.md` files are added in name order
+
+Each input starts on a new page. Like `--append`, it needs pypdf.
+
+```bash
+# Several Markdown files into one PDF
+python3 md_to_pdf intro.md chapter1.md chapter2.md --combine -o book.pdf
+
+# Mix existing PDFs, Markdown and a directory
+python3 md_to_pdf cover.pdf intro.md chapters/ appendix.pdf --combine -o book.pdf
+```
+
+With `--delete-md`, the Markdown sources are deleted only after the combined PDF is written. If any
+file fails to convert, nothing is written.
 
 ### From Python
 
@@ -140,4 +163,4 @@ Markdown → HTML → PDF:
 | `template.py` | Builds the full HTML page |
 | `styles.css` | All PDF styling — edit this to change the look |
 | `renderers.py` | Finds a browser and prints the HTML to PDF |
-| `merge.py` | Appends one PDF's pages to another (`--append`) |
+| `merge.py` | Joins PDFs (`--append`, `--combine`) |
